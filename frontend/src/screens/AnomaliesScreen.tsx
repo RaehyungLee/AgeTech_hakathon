@@ -1,4 +1,5 @@
 import type { Anomaly, Detection } from "../types";
+import { DETECTION_PRESETS, type DetectionKey } from "../detectionDefaults";
 
 interface Props {
   anomalies: Anomaly[];
@@ -10,27 +11,37 @@ interface Props {
   onGoHotline: () => void;
 }
 
-const detectionTiles = [
+const detectionTiles: Array<{
+  id: DetectionKey;
+  label: string;
+  emoji: string;
+  matcher: RegExp;
+  firstDurationSeconds: number;
+  secondDurationSeconds: number;
+}> = [
   {
-    id: "sink" as const,
+    id: "sink",
     label: "Sink",
     emoji: "💧",
-    description: "Water use and kitchen flow",
     matcher: /(sink|kitchen|water)/i,
+    firstDurationSeconds: DETECTION_PRESETS.sink.firstDurationSeconds,
+    secondDurationSeconds: DETECTION_PRESETS.sink.secondDurationSeconds,
   },
   {
-    id: "bath" as const,
+    id: "bath",
     label: "Bath",
     emoji: "🚿",
-    description: "Bathroom motion and inactivity",
-    matcher: /(bath|shower|bathtub)/i,
+    matcher: /(bath|shower|bathtub|restroom)/i,
+    firstDurationSeconds: DETECTION_PRESETS.bath.firstDurationSeconds,
+    secondDurationSeconds: DETECTION_PRESETS.bath.secondDurationSeconds,
   },
   {
-    id: "bed" as const,
+    id: "bed",
     label: "Bed",
     emoji: "🛏️",
-    description: "Bed exits and rest changes",
     matcher: /(bed|sleep|bed_exit)/i,
+    firstDurationSeconds: DETECTION_PRESETS.bed.firstDurationSeconds,
+    secondDurationSeconds: DETECTION_PRESETS.bed.secondDurationSeconds,
   },
 ];
 
@@ -49,21 +60,16 @@ export function AnomaliesScreen({
   const primaryAlert =
     activeAlerts.find((anomaly) => anomaly.severity === "critical") ?? activeAlerts[0];
 
-  const combined = [...detectionTiles, ...detections.map((d) => ({
-    id: d.id,
-    label: d.name,
-    emoji: d.emoji,
-    matcher: d.trigger_on_sensor_id
-      ? new RegExp("^" + d.trigger_on_sensor_id + "$")
-      : new RegExp(d.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
-    meta: d,
-  }))];
+  const combined = detectionTiles.map((tile) => ({
+    ...tile,
+    meta: detections.find((d) => d.key === tile.id),
+  }));
 
   const now = Date.now();
   const detectionTilesWithStatus = combined.map((tile) => {
     const matching = activeAlerts.filter((anomaly) => {
-      const det = (tile as any).meta as Detection | undefined;
-      if (det && det.trigger_on_sensor_id) {
+      const det = tile.meta;
+      if (det?.trigger_on_sensor_id) {
         return anomaly.sensor_id === det.trigger_on_sensor_id;
       }
       return tile.matcher.test(`${anomaly.title} ${anomaly.sensor_name} ${anomaly.type}`);
@@ -73,9 +79,9 @@ export function AnomaliesScreen({
 
     const earliest = matching.reduce((min, a) => (new Date(a.occurred_at).getTime() < min ? new Date(a.occurred_at).getTime() : min), Infinity);
     const deltaSec = Math.max(0, Math.floor((now - earliest) / 1000));
-    const det = (tile as any).meta as Detection | undefined;
-    const first = det ? det.first_duration_seconds : 30;
-    const second = det ? det.second_duration_seconds : 60;
+    const det = tile.meta;
+    const first = det?.first_duration_seconds ?? tile.firstDurationSeconds;
+    const second = det?.second_duration_seconds ?? tile.secondDurationSeconds;
 
     const severity = deltaSec >= second ? "critical" : deltaSec >= first ? "warning" : "warning";
     return { ...tile, severity };

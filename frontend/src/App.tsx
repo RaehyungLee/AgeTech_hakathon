@@ -10,6 +10,7 @@ import { SensorsScreen } from "./screens/SensorsScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { SignupScreen } from "./screens/SignupScreen";
 import { AnomalyDetectionSettingsScreen } from "./screens/AnomalyDetectionSettingsScreen";
+import { buildDefaultDetections } from "./detectionDefaults";
 import type {
   Anomaly,
   AuthView,
@@ -88,7 +89,7 @@ function App() {
   const [sensors, setSensors] = useState<Sensor[]>(DEFAULT_SENSORS);
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
   const [selectedDetection, setSelectedDetection] = useState<string | null>(null);
-  const [detections, setDetections] = useState<Detection[]>([]);
+  const [detections, setDetections] = useState<Detection[]>(() => buildDefaultDetections());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -266,7 +267,10 @@ function App() {
               sensors={sensors}
               onBack={() => setSelectedDetection(null)}
               onSave={(detection) => {
-                setDetections((prev) => [...prev.filter((p) => p.id !== detection.id), detection]);
+                setDetections((prev) => [
+                  ...prev.filter((p) => p.key !== detection.key),
+                  detection,
+                ]);
                 setSelectedDetection(null);
               }}
             />

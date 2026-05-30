@@ -1909,3 +1909,44 @@
 .settings-actions { display:flex; gap:0.6rem; margin-top:1rem; }
 
 .rename-icon { font-size: 0.95rem; background: transparent; border: none; }
+
+.detection-preset-note {
+  margin: 0.75rem 0 0.55rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.learn-activity-btn {
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.8rem 1rem;
+  border-radius: 14px;
+  border: 1px dashed var(--mint);
+  background: linear-gradient(135deg, #fffef8, var(--surface-mint));
+  color: var(--rose-strong);
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.learn-activity-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.learn-activity-btn.learned {
+  border-style: solid;
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.learning-note {
+  margin: 0.55rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  background: var(--surface-mint);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}

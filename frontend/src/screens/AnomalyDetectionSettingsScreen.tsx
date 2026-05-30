@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
 import type { Sensor, Detection } from "../types";
+import {
+  DETECTION_LEARNED,
+  DETECTION_PRESETS,
+  formatDuration,
+  isDetectionKey,
+} from "../detectionDefaults";
 
 interface Props {
   detectionId: "sink" | "bath" | "bed" | string;
@@ -8,50 +14,39 @@ interface Props {
   onSave: (d: Detection) => void;
 }
 
-const detectionPresets: Record<
-  string,
-  {
-    name: string;
-    emoji: string;
-    triggerOnName: string;
-    triggerOffName: string;
-    firstDurationSeconds: number;
-    secondDurationSeconds: number;
-  }
-> = {
-  sink: {
-    name: "Sink",
-    emoji: "💧",
-    triggerOnName: "Sink water usage",
-    triggerOffName: "Sink water usage",
-    firstDurationSeconds: 20 * 60,
-    secondDurationSeconds: 10 * 60,
-  },
-  bath: {
-    name: "Bath",
-    emoji: "🚿",
-    triggerOnName: "Bathroom door",
-    triggerOffName: "Bathroom door",
-    firstDurationSeconds: 45 * 60,
-    secondDurationSeconds: 30,
-  },
-  bed: {
-    name: "Bedroom",
-    emoji: "🛏️",
-    triggerOnName: "Bed pressure",
-    triggerOffName: "Bedroom motion",
-    firstDurationSeconds: 3 * 60,
-    secondDurationSeconds: 10 * 60,
-  },
-};
-
 function findSensorId(sensors: Sensor[], name: string) {
   return sensors.find((sensor) => sensor.name.toLowerCase() === name.toLowerCase())?.id ?? "";
 }
 
+function applySeconds(
+  first: number,
+  second: number,
+  setters: {
+    setH: (v: number) => void;
+    setM: (v: number) => void;
+    setS: (v: number) => void;
+    setM2: (v: number) => void;
+    setS2: (v: number) => void;
+  },
+) {
+  setters.setH(Math.floor(first / 3600));
+  setters.setM(Math.floor((first % 3600) / 60));
+  setters.setS(first % 60);
+  setters.setM2(Math.floor(second / 60));
+  setters.setS2(second % 60);
+}
+
 export function AnomalyDetectionSettingsScreen({ detectionId, sensors, onBack, onSave }: Props) {
-  const preset = detectionPresets[detectionId];
-  const def = preset ?? { name: detectionId, emoji: "🔔", triggerOnName: "", triggerOffName: "", firstDurationSeconds: 10 * 60, secondDurationSeconds: 10 * 60 };
+  const preset = isDetectionKey(detectionId) ? DETECTION_PRESETS[detectionId] : null;
+  const def = preset ?? {
+    name: detectionId,
+    emoji: "🔔",
+    triggerOnName: "",
+    triggerOffName: "",
+    firstDurationSeconds: 10 * 60,
+    secondDurationSeconds: 10 * 60,
+    learnSourceLabel: "recent activity",
+  };
 
   const [emoji, setEmoji] = useState(def.emoji);
   const [name, setName] = useState(def.name);
@@ -62,17 +57,24 @@ export function AnomalyDetectionSettingsScreen({ detectionId, sensors, onBack, o
   const [s, setS] = useState(def.firstDurationSeconds % 60);
   const [m2, setM2] = useState(Math.floor(def.secondDurationSeconds / 60));
   const [s2, setS2] = useState(def.secondDurationSeconds % 60);
+  const [learning, setLearning] = useState(false);
+  const [learned, setLearned] = useState(false);
+  const [learningNote, setLearningNote] = useState<string | null>(null);
 
   useEffect(() => {
     if (!preset) return;
 
     setEmoji(preset.emoji);
     setName(preset.name);
-    setH(Math.floor(preset.firstDurationSeconds / 3600));
-    setM(Math.floor((preset.firstDurationSeconds % 3600) / 60));
-    setS(preset.firstDurationSeconds % 60);
-    setM2(Math.floor(preset.secondDurationSeconds / 60));
-    setS2(preset.secondDurationSeconds % 60);
+    setLearned(false);
+    setLearningNote(null);
+    applySeconds(preset.firstDurationSeconds, preset.secondDurationSeconds, {
+      setH,
+      setM,
+      setS,
+      setM2,
+      setS2,
+    });
     setTriggerOn(findSensorId(sensors, preset.triggerOnName));
     setTriggerOff(findSensorId(sensors, preset.triggerOffName));
   }, [detectionId, preset, sensors]);
@@ -80,6 +82,30 @@ export function AnomalyDetectionSettingsScreen({ detectionId, sensors, onBack, o
   function chooseEmoji() {
     const val = window.prompt("Enter emoji (single character)", emoji) || emoji;
     setEmoji(val.slice(0, 2));
+  }
+
+  function handleLearnFromActivity() {
+    if (!isDetectionKey(detectionId)) return;
+
+    setLearning(true);
+    setLearningNote(null);
+    window.setTimeout(() => {
+      const values = DETECTION_LEARNED[detectionId];
+      applySeconds(values.firstDurationSeconds, values.secondDurationSeconds, {
+        setH,
+        setM,
+        setS,
+        setM2,
+        setS2,
+      });
+      setLearning(false);
+      setLearned(true);
+      setLearningNote(
+        `Updated from ${DETECTION_PRESETS[detectionId].learnSourceLabel}. ` +
+          `1st: ${formatDuration(values.firstDurationSeconds)}, ` +
+          `2nd: ${formatDuration(values.secondDurationSeconds)}.`,
+      );
+    }, 1200);
   }
 
   function handleSave() {
@@ -106,7 +132,10 @@ export function AnomalyDetectionSettingsScreen({ detectionId, sensors, onBack, o
 
       <header className="screen-header">
         <h1>Detection Setting</h1>
-        <p className="hero-copy">Configure the detection behavior and triggers.</p>
+        <p className="hero-copy">
+          Defaults are tuned from 1,001 restroom visits. Use learning to refine the personal baseline
+          (demo).
+        </p>
       </header>
 
       <div className="soft-card settings-form">
@@ -124,14 +153,32 @@ export function AnomalyDetectionSettingsScreen({ detectionId, sensors, onBack, o
           </div>
         </div>
 
+        {preset && (
+          <p className="detection-preset-note">
+            Dataset defaults — warning: {formatDuration(preset.firstDurationSeconds)}, critical:{" "}
+            {formatDuration(preset.secondDurationSeconds)}.
+          </p>
+        )}
+
+        <button
+          type="button"
+          className={`learn-activity-btn${learned ? " learned" : ""}`}
+          onClick={handleLearnFromActivity}
+          disabled={learning || !isDetectionKey(detectionId)}
+        >
+          {learning ? "Learning from daily activity…" : "Learning from daily activity"}
+        </button>
+
+        {learningNote && <p className="learning-note">{learningNote}</p>}
+
         <hr className="settings-divider" />
 
         <label className="detail-label">Trigger ON: select sensor</label>
         <select className="settings-select" value={triggerOn} onChange={(e) => setTriggerOn(e.target.value)}>
           <option value="">-- choose sensor --</option>
-          {sensors.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
+          {sensors.map((sensor) => (
+            <option key={sensor.id} value={sensor.id}>
+              {sensor.name}
             </option>
           ))}
         </select>
@@ -139,9 +186,9 @@ export function AnomalyDetectionSettingsScreen({ detectionId, sensors, onBack, o
         <label className="detail-label">Trigger OFF: select sensor</label>
         <select className="settings-select" value={triggerOff} onChange={(e) => setTriggerOff(e.target.value)}>
           <option value="">-- choose sensor --</option>
-          {sensors.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
+          {sensors.map((sensor) => (
+            <option key={sensor.id} value={sensor.id}>
+              {sensor.name}
             </option>
           ))}
         </select>
@@ -163,7 +210,6 @@ export function AnomalyDetectionSettingsScreen({ detectionId, sensors, onBack, o
             <div className="duration-inputs">
               <label className="duration-field"><input className="settings-input small" type="number" min={0} value={m2} onChange={(e) => setM2(Number(e.target.value))} /> <span>M</span></label>
               <label className="duration-field"><input className="settings-input small" type="number" min={0} value={s2} onChange={(e) => setS2(Number(e.target.value))} /> <span>S</span></label>
-              <span className="muted">(default 10m)</span>
             </div>
           </div>
         </div>
