@@ -5,8 +5,10 @@ services:
       - "8000:8000"
     environment:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:3000}
+      RESTROOM_DATA_PATH: /data/restroom.csv
     volumes:
       - ./backend:/app
+      - ./single_patient_detailed_1000_visits.csv:/data/restroom.csv:ro
     restart: unless-stopped
 
   frontend:

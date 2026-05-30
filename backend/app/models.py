@@ -111,6 +111,7 @@ class AnomalyType(str, Enum):
     heart_rate = "heart_rate"
     bed_exit = "bed_exit"
     medication = "medication"
+    restroom = "restroom"
 
 
 class Sensor(BaseModel):
@@ -147,6 +148,34 @@ class DashboardSummary(BaseModel):
     critical_anomalies: int
     privacy_mode: bool = False
     monitoring_active: bool = False
+
+
+class RestroomAlert(BaseModel):
+    """One finding from the restroom monitoring agent."""
+
+    id: str
+    level: str               # "yellow" | "red"
+    kind: str                # e.g. "duration_red", "uti_frequency", "inactivity"
+    title: str
+    message: str
+    value: float
+    source: str              # "clinical" | "personal"
+    occurred_at: datetime
+    anomaly_id: str | None = None   # linked Anomaly (drives the emergency flow)
+
+
+class AgentReport(BaseModel):
+    """Result of an agent pass over the resident's restroom history."""
+
+    agent: str
+    generated_at: datetime
+    visits_reviewed: int
+    days_reviewed: int
+    baseline: dict
+    overall_level: str       # "none" | "yellow" | "red"
+    emergency: bool
+    summary: str
+    alerts: list[RestroomAlert] = Field(default_factory=list)
 
 
 class CareInsight(BaseModel):

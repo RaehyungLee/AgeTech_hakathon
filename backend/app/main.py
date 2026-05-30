@@ -13,9 +13,11 @@ from app.auth import (
     register_user,
     require_user,
 )
+from app.agent import run_agent_scan
 from app.care import get_care_insight
 from app.config import settings
 from app.models import (
+    AgentReport,
     Anomaly,
     CareInsight,
     DashboardSummary,
@@ -59,9 +61,31 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+def _bootstrap_agent() -> None:
+    """Run one monitoring pass at boot so restroom findings (incl. the 2-hour
+    emergency) are present in the anomaly feed from the first request."""
+    try:
+        run_agent_scan()
+    except Exception as exc:  # never block startup on the data layer
+        print(f"[agent] startup scan skipped: {exc}")
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/restroom/risk", response_model=AgentReport)
+def restroom_risk(user: User = Depends(require_user)) -> AgentReport:
+    """Latest monitoring-agent report over the resident's restroom history."""
+    return run_agent_scan()
+
+
+@app.post("/api/agent/scan", response_model=AgentReport)
+def agent_scan(user: User = Depends(require_user)) -> AgentReport:
+    """Trigger a fresh agent pass (re-reads data, refreshes anomalies)."""
+    return run_agent_scan()
 
 
 @app.post("/api/auth/login", response_model=LoginResponse)

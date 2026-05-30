@@ -80,6 +80,15 @@ def _seed() -> None:
             status=SensorStatus.online,
             last_seen=now - timedelta(minutes=8),
         ),
+        Sensor(
+            id="s7",
+            name="Restroom Occupancy",
+            type=SensorType.motion,
+            location="Bathroom",
+            battery=83,
+            status=SensorStatus.online,
+            last_seen=now - timedelta(minutes=1),
+        ),
     ]
 
     for sensor in sensors:
@@ -203,6 +212,27 @@ def acknowledge_anomaly(anomaly_id: str) -> Anomaly | None:
     updated = anomaly.model_copy(update={"acknowledged": True})
     ANOMALIES[anomaly_id] = updated
     return updated
+
+
+RESTROOM_SENSOR_ID = "s7"
+
+
+def register_agent_anomalies(anomalies: list[Anomaly]) -> list[Anomaly]:
+    """Upsert anomalies produced by a monitoring agent.
+
+    Idempotent: an anomaly with an existing id is refreshed in place but keeps
+    its acknowledged state, so re-running the agent never resurrects an alert a
+    caregiver has already handled.
+    """
+    _seed()
+    stored: list[Anomaly] = []
+    for anomaly in anomalies:
+        existing = ANOMALIES.get(anomaly.id)
+        if existing is not None:
+            anomaly = anomaly.model_copy(update={"acknowledged": existing.acknowledged})
+        ANOMALIES[anomaly.id] = anomaly
+        stored.append(anomaly)
+    return stored
 
 
 def get_summary() -> DashboardSummary:
