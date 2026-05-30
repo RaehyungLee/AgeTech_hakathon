@@ -1,14 +1,17 @@
 import { SensorCard } from "../components/SensorCard";
-import type { DashboardSummary, Sensor, User } from "../types";
+import type { Sensor, User } from "../types";
 
 interface Props {
   sensors: Sensor[];
-  summary: DashboardSummary | null;
   user: User;
   onRename: (id: string, name: string) => Promise<void>;
 }
 
-export function SensorsScreen({ sensors, summary, user, onRename }: Props) {
+export function SensorsScreen({ sensors, user, onRename }: Props) {
+  const onlineCount = sensors.filter((s) => s.status !== "offline").length;
+  const lowBatteryCount = sensors.filter((s) => s.status === "low_battery").length;
+  const totalCount = sensors.length;
+
   return (
     <div className="screen sensors-screen">
       <header className="screen-header">
@@ -21,33 +24,33 @@ export function SensorsScreen({ sensors, summary, user, onRename }: Props) {
         </p>
       </header>
 
-      {summary && (
-        <section className="sensor-summary-strip">
-          <div>
-            <strong>{summary.online_sensors}</strong>
-            <span>Online</span>
-          </div>
-          <div>
-            <strong>{summary.low_battery_sensors}</strong>
-            <span>Low battery</span>
-          </div>
-          <div>
-            <strong>{summary.total_sensors}</strong>
-            <span>Total</span>
-          </div>
-        </section>
-      )}
+      <section className="sensor-summary-strip">
+        <div>
+          <strong>{onlineCount}</strong>
+          <span>Online</span>
+        </div>
+        <div>
+          <strong>{lowBatteryCount}</strong>
+          <span>Low battery</span>
+        </div>
+        <div>
+          <strong>{totalCount}</strong>
+          <span>Total</span>
+        </div>
+      </section>
 
       <div className="sensor-list">
-        {sensors.map((sensor) => (
-          <SensorCard
-            key={sensor.id}
-            sensor={sensor}
-            onRename={onRename}
-            compact
-            canRename={user.role === "resident"}
-          />
-        ))}
+        {[...sensors]
+          .sort((a, b) => a.battery - b.battery)
+          .map((sensor) => (
+            <SensorCard
+              key={sensor.id}
+              sensor={sensor}
+              onRename={onRename}
+              compact
+              canRename={user.role === "resident"}
+            />
+          ))}
       </div>
     </div>
   );

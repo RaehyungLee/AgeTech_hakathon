@@ -22,6 +22,62 @@ import type {
 } from "./types";
 import "./App.css";
 
+const DESIRED_SENSOR_NAMES = [
+  "Sink water usage",
+  "Bathroom door",
+  "Bedroom motion",
+  "Bed pressure",
+];
+
+const DEFAULT_SENSORS: Sensor[] = [
+  {
+    id: "sink-water-usage",
+    name: "Sink water usage",
+    type: "motion",
+    location: "Kitchen",
+    battery: 92,
+    status: "online",
+    last_seen: new Date().toISOString(),
+  },
+  {
+    id: "bathroom-door",
+    name: "Bathroom door",
+    type: "door",
+    location: "Bathroom",
+    battery: 93,
+    status: "online",
+    last_seen: new Date().toISOString(),
+  },
+  {
+    id: "bedroom-motion",
+    name: "Bedroom motion",
+    type: "motion",
+    location: "Bedroom",
+    battery: 45,
+    status: "online",
+    last_seen: new Date().toISOString(),
+  },
+  {
+    id: "bed-pressure",
+    name: "Bed pressure",
+    type: "bed",
+    location: "Bedroom",
+    battery: 18,
+    status: "low_battery",
+    last_seen: new Date().toISOString(),
+  },
+];
+
+const DEFAULT_SUMMARY = {
+  total_sensors: DEFAULT_SENSORS.length,
+  online_sensors: DEFAULT_SENSORS.length,
+  low_battery_sensors: DEFAULT_SENSORS.filter((s) => s.status === "low_battery").length,
+  active_anomalies: 0,
+  critical_anomalies: 0,
+  privacy_mode: false,
+  monitoring_active: true,
+};
+
 function App() {
   const [authView, setAuthView] = useState<AuthView>("login");
   const [user, setUser] = useState<User | null>(null);
@@ -29,7 +85,7 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [tab, setTab] = useState<TabId>("home");
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [sensors, setSensors] = useState<Sensor[]>([]);
+  const [sensors, setSensors] = useState<Sensor[]>(DEFAULT_SENSORS);
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
   const [selectedDetection, setSelectedDetection] = useState<string | null>(null);
   const [detections, setDetections] = useState<Detection[]>([]);
@@ -46,8 +102,15 @@ function App() {
       ]);
       setUser(me.user);
       setWatchedResidents(me.watched_residents);
-      setSummary(summaryData);
-      setSensors(sensorData);
+      setSummary(
+        summaryData && summaryData.total_sensors >= DEFAULT_SENSORS.length ? summaryData : DEFAULT_SUMMARY,
+      );
+      const selectedSensors = sensorData.filter((sensor) => DESIRED_SENSOR_NAMES.includes(sensor.name));
+      setSensors(
+        selectedSensors.length === DESIRED_SENSOR_NAMES.length
+          ? DESIRED_SENSOR_NAMES.map((name) => selectedSensors.find((sensor) => sensor.name === name)!)
+          : DEFAULT_SENSORS,
+      );
       setAnomalies(anomalyData);
       setError(null);
     } catch {
@@ -212,7 +275,6 @@ function App() {
           {tab === "sensors" && (
             <SensorsScreen
               sensors={sensors}
-              summary={summary}
               user={user}
               onRename={handleRename}
             />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Sensor, Detection } from "../types";
 
 interface Props {
@@ -8,24 +8,74 @@ interface Props {
   onSave: (d: Detection) => void;
 }
 
-const defaults: Record<string, { name: string; emoji: string }> = {
-  sink: { name: "Sink", emoji: "💧" },
-  bath: { name: "Bath", emoji: "🚿" },
-  bed: { name: "Bed", emoji: "🛏️" },
+const detectionPresets: Record<
+  string,
+  {
+    name: string;
+    emoji: string;
+    triggerOnName: string;
+    triggerOffName: string;
+    firstDurationSeconds: number;
+    secondDurationSeconds: number;
+  }
+> = {
+  sink: {
+    name: "Sink",
+    emoji: "💧",
+    triggerOnName: "Sink water usage",
+    triggerOffName: "Sink water usage",
+    firstDurationSeconds: 20 * 60,
+    secondDurationSeconds: 10 * 60,
+  },
+  bath: {
+    name: "Bath",
+    emoji: "🚿",
+    triggerOnName: "Bathroom door",
+    triggerOffName: "Bathroom door",
+    firstDurationSeconds: 45 * 60,
+    secondDurationSeconds: 30,
+  },
+  bed: {
+    name: "Bedroom",
+    emoji: "🛏️",
+    triggerOnName: "Bed pressure",
+    triggerOffName: "Bedroom motion",
+    firstDurationSeconds: 3 * 60,
+    secondDurationSeconds: 10 * 60,
+  },
 };
 
+function findSensorId(sensors: Sensor[], name: string) {
+  return sensors.find((sensor) => sensor.name.toLowerCase() === name.toLowerCase())?.id ?? "";
+}
+
 export function AnomalyDetectionSettingsScreen({ detectionId, sensors, onBack, onSave }: Props) {
-  const def = defaults[detectionId] ?? { name: detectionId, emoji: "🔔" };
+  const preset = detectionPresets[detectionId];
+  const def = preset ?? { name: detectionId, emoji: "🔔", triggerOnName: "", triggerOffName: "", firstDurationSeconds: 10 * 60, secondDurationSeconds: 10 * 60 };
 
   const [emoji, setEmoji] = useState(def.emoji);
   const [name, setName] = useState(def.name);
   const [triggerOn, setTriggerOn] = useState<string | "">("");
   const [triggerOff, setTriggerOff] = useState<string | "">("");
-  const [h, setH] = useState(0);
-  const [m, setM] = useState(0);
-  const [s, setS] = useState(30);
-  const [m2, setM2] = useState(0);
-  const [s2, setS2] = useState(30);
+  const [h, setH] = useState(Math.floor(def.firstDurationSeconds / 3600));
+  const [m, setM] = useState(Math.floor((def.firstDurationSeconds % 3600) / 60));
+  const [s, setS] = useState(def.firstDurationSeconds % 60);
+  const [m2, setM2] = useState(Math.floor(def.secondDurationSeconds / 60));
+  const [s2, setS2] = useState(def.secondDurationSeconds % 60);
+
+  useEffect(() => {
+    if (!preset) return;
+
+    setEmoji(preset.emoji);
+    setName(preset.name);
+    setH(Math.floor(preset.firstDurationSeconds / 3600));
+    setM(Math.floor((preset.firstDurationSeconds % 3600) / 60));
+    setS(preset.firstDurationSeconds % 60);
+    setM2(Math.floor(preset.secondDurationSeconds / 60));
+    setS2(preset.secondDurationSeconds % 60);
+    setTriggerOn(findSensorId(sensors, preset.triggerOnName));
+    setTriggerOff(findSensorId(sensors, preset.triggerOffName));
+  }, [detectionId, preset, sensors]);
 
   function chooseEmoji() {
     const val = window.prompt("Enter emoji (single character)", emoji) || emoji;
@@ -55,8 +105,7 @@ export function AnomalyDetectionSettingsScreen({ detectionId, sensors, onBack, o
       </button>
 
       <header className="screen-header">
-        <p className="greeting-eyebrow">{name} Detection</p>
-        <h1>{name} Settings</h1>
+        <h1>Detection Setting</h1>
         <p className="hero-copy">Configure the detection behavior and triggers.</p>
       </header>
 
@@ -114,7 +163,7 @@ export function AnomalyDetectionSettingsScreen({ detectionId, sensors, onBack, o
             <div className="duration-inputs">
               <label className="duration-field"><input className="settings-input small" type="number" min={0} value={m2} onChange={(e) => setM2(Number(e.target.value))} /> <span>M</span></label>
               <label className="duration-field"><input className="settings-input small" type="number" min={0} value={s2} onChange={(e) => setS2(Number(e.target.value))} /> <span>S</span></label>
-              <span className="muted">(default 30s)</span>
+              <span className="muted">(default 10m)</span>
             </div>
           </div>
         </div>

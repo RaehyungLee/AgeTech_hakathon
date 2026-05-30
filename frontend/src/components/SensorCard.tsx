@@ -2,7 +2,6 @@ import { useState } from "react";
 import type { Sensor } from "../types";
 import {
   batteryLevel,
-  formatRelativeTime,
   sensorIcon,
   sensorTypeLabels,
 } from "../utils";
@@ -102,10 +101,6 @@ export function SensorCard({ sensor, onRename, compact = false, canRename = true
         <div>
           <span className="detail-label">Location</span>
           <span className="detail-value">{sensor.location}</span>
-        </div>
-        <div>
-          <span className="detail-label">Last seen</span>
-          <span className="detail-value">{formatRelativeTime(sensor.last_seen)}</span>
         </div>
       </div>
 
