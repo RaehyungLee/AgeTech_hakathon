@@ -195,24 +195,23 @@ def register_user(
     return token, user
 
 
-def get_emergency_contacts(include_local_emergency: bool) -> list[EmergencyContact]:
+def get_emergency_contacts() -> list[EmergencyContact]:
     contacts = list(SEEDED_CONTACTS)
-    if include_local_emergency:
-        profile = RESIDENT_PROFILES.get("u1")
-        if profile:
-            number, label = emergency_for_country(profile.country_code)
-            contacts.insert(
-                0,
-                EmergencyContact(
-                    id="local-911",
-                    name=label,
-                    relation="Local emergency",
-                    phone=number,
-                    tel_uri=f"tel:{number}",
-                    when_to_call="Life-threatening danger — available during active critical alerts.",
-                    is_emergency=True,
-                ),
-            )
+    profile = RESIDENT_PROFILES.get("u1")
+    if profile:
+        number, label = emergency_for_country(profile.country_code)
+        contacts.insert(
+            0,
+            EmergencyContact(
+                id="local-911",
+                name=label,
+                relation="Local emergency",
+                phone=number,
+                tel_uri=f"tel:{number}",
+                when_to_call="Life-threatening danger — call immediately.",
+                is_emergency=True,
+            ),
+        )
     return contacts
 
 

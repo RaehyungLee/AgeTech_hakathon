@@ -34,7 +34,6 @@ from app.privacy import (
     caregiver_privacy_mode,
     filter_anomalies_for_user,
     filter_sensors_for_user,
-    has_critical_access,
     summary_for_user,
     care_for_user,
     watched_residents_for_user,
@@ -99,8 +98,7 @@ def auth_me(user: User = Depends(require_user)) -> MeResponse:
 
 @app.get("/api/emergency/contacts", response_model=list[EmergencyContact])
 def emergency_contacts(user: User = Depends(require_user)) -> list[EmergencyContact]:
-    include_local = user.role == UserRole.resident or has_critical_access(user)
-    return get_emergency_contacts(include_local)
+    return get_emergency_contacts()
 
 
 @app.get("/api/emergency/{anomaly_id}", response_model=EmergencyInfo)
