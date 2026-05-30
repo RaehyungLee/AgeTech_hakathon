@@ -451,6 +451,22 @@
   background: linear-gradient(180deg, #fffef8, var(--peach-soft));
 }
 
+.contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.contact-actions .delete-btn {
+  margin-left: auto;
+}
+
+.contact-card.dragging {
+  opacity: 0.5;
+  border-color: var(--text-muted);
+}
+
 .sensor-details {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -463,6 +479,12 @@
   font-size: 0.72rem;
   color: var(--text-muted);
   margin-bottom: 0.12rem;
+}
+
+.required-star {
+  color: var(--critical);
+  margin-left: 0.18rem;
+  font-weight: 800;
 }
 
 .detail-value {
@@ -797,6 +819,27 @@
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
   font-weight: 700;
+}
+
+/* Modal overlay and card (top-aligned) */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 3.25rem;
+  z-index: 1200;
+  pointer-events: auto;
+}
+
+.modal-card {
+  width: min(94%, 420px);
+  max-width: 420px;
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: var(--shadow-soft);
 }
 
 .loading-banner {
@@ -1144,6 +1187,10 @@
 
 .status-card.status-critical .status-body h2 {
   color: #8f1818;
+  font-family: "Impact", "Arial Black", "Arial", sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .status-card.status-critical .status-body p {
