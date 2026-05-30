@@ -1,10 +1,19 @@
 import type { Anomaly, Detection } from "../types";
+import { AlertStatusCard, type HomeAlertLevel } from "../components/AlertStatusCard";
 import { DETECTION_PRESETS, type DetectionKey } from "../detectionDefaults";
+import {
+  DEMO_DETECTION_KEY,
+  demoStageSeverity,
+  getDemoAlert,
+  type HomeDemoStage,
+} from "../homeDemo";
 
 interface Props {
   anomalies: Anomaly[];
   privacyMode: boolean;
   detections?: Detection[];
+  demoStage: HomeDemoStage;
+  onResetDemoStage: () => void;
   onSelectDetection: (id: string) => void;
   onAddDetection?: () => void;
   onAcknowledge: (id: string) => void;
@@ -49,16 +58,29 @@ export function AnomaliesScreen({
   anomalies,
   privacyMode,
   detections = [],
+  demoStage,
+  onResetDemoStage,
   onSelectDetection,
   onAddDetection,
   onAcknowledge,
   onGoHotline,
 }: Props) {
   const activeAlerts = anomalies.filter((anomaly) => !anomaly.acknowledged);
-  const alertCount = activeAlerts.length;
-  const activeAlertsLabel = alertCount === 1 ? "1 alert active" : `${alertCount} alerts active`;
+  const demoAlert = getDemoAlert(demoStage);
+  const demoSeverity = demoStageSeverity(demoStage);
+  const showDemoBanner = demoStage > 0;
   const primaryAlert =
     activeAlerts.find((anomaly) => anomaly.severity === "critical") ?? activeAlerts[0];
+
+  function handleBannerAcknowledge() {
+    if (demoStage > 0) {
+      onResetDemoStage();
+      return;
+    }
+    if (primaryAlert) {
+      onAcknowledge(primaryAlert.id);
+    }
+  }
 
   const combined = detectionTiles.map((tile) => ({
     ...tile,
@@ -67,6 +89,10 @@ export function AnomaliesScreen({
 
   const now = Date.now();
   const detectionTilesWithStatus = combined.map((tile) => {
+    if (tile.id === DEMO_DETECTION_KEY && demoSeverity) {
+      return { ...tile, severity: demoSeverity };
+    }
+
     const matching = activeAlerts.filter((anomaly) => {
       const det = tile.meta;
       if (det?.trigger_on_sensor_id) {
@@ -87,6 +113,29 @@ export function AnomaliesScreen({
     return { ...tile, severity };
   });
 
+  const activeAlertCard: {
+    level: HomeAlertLevel;
+    eyebrow: string;
+    title: string;
+    message: string;
+  } | null =
+    showDemoBanner && demoAlert && demoSeverity
+      ? {
+          level: demoSeverity,
+          eyebrow: demoAlert.eyebrow,
+          title: demoAlert.title,
+          message: demoAlert.message,
+        }
+      : primaryAlert
+        ? {
+            level: primaryAlert.severity === "critical" ? "critical" : "warning",
+            eyebrow:
+              primaryAlert.severity === "critical" ? "Important alert" : "Watch closely",
+            title: primaryAlert.title,
+            message: primaryAlert.message,
+          }
+        : null;
+
   return (
     <div className="screen anomalies-screen">
       <header className="screen-header">
@@ -99,28 +148,21 @@ export function AnomaliesScreen({
         </p>
       </header>
 
-      <section className={`alert-banner${alertCount > 0 ? " active" : ""}`}>
-        <p className="alert-title">{alertCount > 0 ? "Alert active" : "All clear"}</p>
-        <p className="alert-copy">
-          {alertCount > 0 && primaryAlert
-            ? `${primaryAlert.title}. ${activeAlertsLabel}.`
-            : "No active anomalies right now. Monitoring is quiet."}
-        </p>
-        {alertCount > 0 && primaryAlert && (
-          <div className="status-alert-actions alert-banner-actions">
-            <button type="button" className="hotline-btn" onClick={onGoHotline}>
-              Hotline
-            </button>
-            <button
-              type="button"
-              className="ack-btn status-ack-btn"
-              onClick={() => onAcknowledge(primaryAlert.id)}
-            >
-              Acknowledge
-            </button>
-          </div>
-        )}
-      </section>
+      {activeAlertCard ? (
+        <AlertStatusCard
+          level={activeAlertCard.level}
+          eyebrow={activeAlertCard.eyebrow}
+          title={activeAlertCard.title}
+          message={activeAlertCard.message}
+          onAcknowledge={handleBannerAcknowledge}
+          onGoHotline={onGoHotline}
+        />
+      ) : (
+        <section className="alert-banner">
+          <p className="alert-title">All clear</p>
+          <p className="alert-copy">No active anomalies right now. Monitoring is quiet.</p>
+        </section>
+      )}
 
       <div className="screen-section">
         <div className="detection-grid">

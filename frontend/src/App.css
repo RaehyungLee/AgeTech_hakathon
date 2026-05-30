@@ -1197,6 +1197,45 @@
   color: #6f2020;
 }
 
+.status-card.status-warning {
+  background: linear-gradient(135deg, #fff6e8, #ffe8b8);
+  border: 2px solid rgba(201, 154, 82, 0.5);
+  box-shadow: 0 10px 28px rgba(201, 154, 82, 0.18);
+}
+
+.status-card.status-warning .status-eyebrow {
+  color: #a66b1a;
+}
+
+.status-card.status-warning .status-body h2 {
+  color: #8a5718;
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.status-card.status-warning .status-body p {
+  color: #6f5528;
+}
+
+.status-icon.warning {
+  background: #fff0d6;
+  color: #c99a52;
+  border: 2px solid rgba(201, 154, 82, 0.4);
+}
+
+.status-warning .hotline-btn {
+  border-color: #c99a52;
+  background: #fffaf0;
+  color: #a66b1a;
+}
+
+.status-warning .status-ack-btn {
+  background: #c99a52;
+  color: #fffef8;
+}
+
 .status-icon {
   width: 48px;
   height: 48px;
@@ -1595,8 +1634,22 @@
   margin-bottom: 0.5rem;
 }
 
-.home-top .kinu-logo.small {
+.home-logo-trigger {
+  display: block;
   margin: 0 auto 0.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-logo-trigger:focus-visible {
+  outline: none;
+}
+
+.home-top .kinu-logo.small {
+  margin: 0 auto;
 }
 
 .home-center {
@@ -1698,6 +1751,10 @@
   justify-items: center;
 }
 
+.anomalies-screen .status-card.status-center {
+  margin-bottom: 1rem;
+}
+
 .status-center .status-body h2 {
   font-size: 1.65rem;
 }
@@ -1756,6 +1813,30 @@
 
 .alert-banner.active .alert-copy {
   color: #7a2424;
+}
+
+.alert-banner.warning {
+  background: linear-gradient(180deg, #fff6e8, #ffe8b8);
+  border: 2px solid rgba(201, 154, 82, 0.45);
+  box-shadow: 0 8px 24px rgba(201, 154, 82, 0.14);
+}
+
+.alert-banner.warning .alert-title {
+  color: #8a5718;
+}
+
+.alert-banner.warning .alert-copy {
+  color: #6f5528;
+}
+
+.alert-banner.warning .hotline-btn {
+  border-color: #c99a52;
+  background: #fffaf0;
+  color: #a66b1a;
+}
+
+.alert-banner.warning .status-ack-btn {
+  background: #c99a52;
 }
 
 .alert-title {

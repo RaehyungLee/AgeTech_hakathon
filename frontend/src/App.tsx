@@ -4,7 +4,7 @@ import { BottomNav } from "./components/BottomNav";
 import { MobileShell } from "./components/MobileShell";
 import { AnomaliesScreen } from "./screens/AnomaliesScreen";
 import { EmergencyScreen } from "./screens/EmergencyScreen";
-import { HomeScreen } from "./screens/HomeScreen";
+import { HomeScreen, type HomeDemoStage } from "./screens/HomeScreen";
 import { LoginScreen } from "./screens/LoginScreen";
 import { SensorsScreen } from "./screens/SensorsScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
@@ -92,6 +92,7 @@ function App() {
   const [detections, setDetections] = useState<Detection[]>(() => buildDefaultDetections());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [homeDemoStage, setHomeDemoStage] = useState<HomeDemoStage>(0);
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -189,6 +190,14 @@ function App() {
     setTab("emergency");
   }
 
+  function advanceHomeDemoStage() {
+    setHomeDemoStage((stage) => ((stage + 1) % 3) as HomeDemoStage);
+  }
+
+  function resetHomeDemoStage() {
+    setHomeDemoStage(0);
+  }
+
   if (authLoading) {
     return (
       <MobileShell live={false}>
@@ -246,6 +255,9 @@ function App() {
               user={user}
               privacyMode={privacyMode}
               watchedResidents={watchedResidents}
+              demoStage={homeDemoStage}
+              onAdvanceDemoStage={advanceHomeDemoStage}
+              onResetDemoStage={resetHomeDemoStage}
               onAcknowledge={(id) => void handleAcknowledge(id)}
               onGoHotline={handleGoHotline}
             />
@@ -255,6 +267,8 @@ function App() {
               anomalies={anomalies}
               privacyMode={privacyMode}
               detections={detections}
+              demoStage={homeDemoStage}
+              onResetDemoStage={resetHomeDemoStage}
               onSelectDetection={(id) => setSelectedDetection(id)}
               onAddDetection={() => setSelectedDetection("sink")}
               onAcknowledge={(id) => void handleAcknowledge(id)}
