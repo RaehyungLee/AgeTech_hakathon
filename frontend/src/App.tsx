@@ -116,6 +116,15 @@ function App() {
     );
   }
 
+  async function handleAcknowledge(id: string) {
+    await api.acknowledgeAnomaly(id);
+    await loadDashboard();
+  }
+
+  function handleGoHotline() {
+    setTab("emergency");
+  }
+
   if (authLoading) {
     return (
       <MobileShell live={false}>
@@ -173,7 +182,8 @@ function App() {
               user={user}
               privacyMode={privacyMode}
               watchedResidents={watchedResidents}
-              onGoAnomalies={() => setTab("anomalies")}
+              onAcknowledge={(id) => void handleAcknowledge(id)}
+              onGoHotline={handleGoHotline}
             />
           )}
           {tab === "anomalies" && !selectedDetection && (
@@ -183,6 +193,8 @@ function App() {
               detections={detections}
               onSelectDetection={(id) => setSelectedDetection(id)}
               onAddDetection={() => setSelectedDetection("sink")}
+              onAcknowledge={(id) => void handleAcknowledge(id)}
+              onGoHotline={handleGoHotline}
             />
           )}
           {selectedDetection && (

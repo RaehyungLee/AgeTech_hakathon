@@ -6,6 +6,8 @@ interface Props {
   detections?: Detection[];
   onSelectDetection: (id: string) => void;
   onAddDetection?: () => void;
+  onAcknowledge: (id: string) => void;
+  onGoHotline: () => void;
 }
 
 const detectionTiles = [
@@ -32,10 +34,20 @@ const detectionTiles = [
   },
 ];
 
-export function AnomaliesScreen({ anomalies, privacyMode, detections = [], onSelectDetection, onAddDetection }: Props) {
+export function AnomaliesScreen({
+  anomalies,
+  privacyMode,
+  detections = [],
+  onSelectDetection,
+  onAddDetection,
+  onAcknowledge,
+  onGoHotline,
+}: Props) {
   const activeAlerts = anomalies.filter((anomaly) => !anomaly.acknowledged);
   const alertCount = activeAlerts.length;
   const activeAlertsLabel = alertCount === 1 ? "1 alert active" : `${alertCount} alerts active`;
+  const primaryAlert =
+    activeAlerts.find((anomaly) => anomaly.severity === "critical") ?? activeAlerts[0];
 
   const combined = [...detectionTiles, ...detections.map((d) => ({
     id: d.id,
@@ -84,10 +96,24 @@ export function AnomaliesScreen({ anomalies, privacyMode, detections = [], onSel
       <section className={`alert-banner${alertCount > 0 ? " active" : ""}`}>
         <p className="alert-title">{alertCount > 0 ? "Alert active" : "All clear"}</p>
         <p className="alert-copy">
-          {alertCount > 0
-            ? `${activeAlertsLabel}. Tap the highlighted tile to inspect it.`
+          {alertCount > 0 && primaryAlert
+            ? `${primaryAlert.title}. ${activeAlertsLabel}.`
             : "No active anomalies right now. Monitoring is quiet."}
         </p>
+        {alertCount > 0 && primaryAlert && (
+          <div className="status-alert-actions alert-banner-actions">
+            <button type="button" className="hotline-btn" onClick={onGoHotline}>
+              Hotline
+            </button>
+            <button
+              type="button"
+              className="ack-btn status-ack-btn"
+              onClick={() => onAcknowledge(primaryAlert.id)}
+            >
+              Acknowledge
+            </button>
+          </div>
+        )}
       </section>
 
       <div className="screen-section">
