@@ -21,6 +21,7 @@ def has_critical_access(user: User) -> bool:
 
 
 def caregiver_privacy_mode(user: User) -> bool:
+    """Detection / activity data stays private until a critical alert."""
     return user.role == UserRole.caregiver and not has_critical_access(user)
 
 
@@ -34,11 +35,7 @@ def filter_anomalies_for_user(user: User, anomalies: list[Anomaly]) -> list[Anom
     ]
 
 
-def filter_sensors_for_user(user: User, sensors: list[Sensor]) -> list[Sensor]:
-    if caregiver_privacy_mode(user):
-        return []
-    if user.role == UserRole.caregiver:
-        return []
+def filter_sensors_for_user(_user: User, sensors: list[Sensor]) -> list[Sensor]:
     return sensors
 
 
@@ -52,25 +49,15 @@ def summary_for_user(user: User) -> DashboardSummary:
         for anomaly in get_anomalies()
         if not anomaly.acknowledged and anomaly.severity == AnomalySeverity.critical
     )
-
-    if caregiver_privacy_mode(user):
-        return DashboardSummary(
-            total_sensors=0,
-            online_sensors=0,
-            low_battery_sensors=0,
-            active_anomalies=0,
-            critical_anomalies=0,
-            privacy_mode=True,
-            monitoring_active=True,
-        )
+    private = caregiver_privacy_mode(user)
 
     return DashboardSummary(
-        total_sensors=0,
-        online_sensors=0,
-        low_battery_sensors=0,
-        active_anomalies=critical,
+        total_sensors=base.total_sensors,
+        online_sensors=base.online_sensors,
+        low_battery_sensors=base.low_battery_sensors,
+        active_anomalies=critical if private else critical,
         critical_anomalies=critical,
-        privacy_mode=False,
+        privacy_mode=private,
         monitoring_active=True,
     )
 
@@ -100,16 +87,17 @@ def private_care_insight() -> CareInsight:
 def watched_residents_for_user(
     user: User, residents: list[WatchedResident]
 ) -> list[WatchedResident]:
-    if user.role != UserRole.caregiver or has_critical_access(user):
+    if user.role != UserRole.caregiver:
+        return residents
+    if has_critical_access(user):
         return residents
     return [
         resident.model_copy(
             update={
-                "address": "Protected until a critical alert",
-                "city": "Private",
+                "address": f"{resident.city} area",
                 "region": "",
                 "emergency_number": "—",
-                "emergency_label": "Shared during critical alerts only",
+                "emergency_label": "Shared during critical alerts",
             }
         )
         for resident in residents

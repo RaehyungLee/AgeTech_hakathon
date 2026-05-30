@@ -11,9 +11,10 @@ interface Props {
   sensor: Sensor;
   onRename: (id: string, name: string) => Promise<void>;
   compact?: boolean;
+  canRename?: boolean;
 }
 
-export function SensorCard({ sensor, onRename, compact = false }: Props) {
+export function SensorCard({ sensor, onRename, compact = false, canRename = true }: Props) {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(sensor.name);
   const [saving, setSaving] = useState(false);
@@ -46,7 +47,7 @@ export function SensorCard({ sensor, onRename, compact = false }: Props) {
           {sensorIcon(sensor.type)}
         </div>
         <div className="sensor-meta">
-          {editing ? (
+          {editing && canRename ? (
             <form
               className="rename-form"
               onSubmit={(e) => {
@@ -78,14 +79,16 @@ export function SensorCard({ sensor, onRename, compact = false }: Props) {
           ) : (
             <div className="sensor-title-row">
               <h3>{sensor.name}</h3>
-              <button
-                type="button"
-                className="rename-btn"
-                onClick={() => setEditing(true)}
-                aria-label={`Rename ${sensor.name}`}
-              >
-                Rename
-              </button>
+              {canRename && (
+                <button
+                  type="button"
+                  className="rename-btn"
+                  onClick={() => setEditing(true)}
+                  aria-label={`Rename ${sensor.name}`}
+                >
+                  Rename
+                </button>
+              )}
             </div>
           )}
           <p className="sensor-type">{sensorTypeLabels[sensor.type]}</p>

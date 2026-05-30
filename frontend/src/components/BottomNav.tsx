@@ -2,9 +2,10 @@ import type { TabId } from "../types";
 
 const tabs: { id: TabId; label: string; icon: string }[] = [
   { id: "home", label: "Home", icon: "⌂" },
+  { id: "anomalies", label: "Anomalies", icon: "◌" },
+  { id: "emergency", label: "Hotline", icon: "☎" },
   { id: "sensors", label: "Sensors", icon: "◎" },
-  { id: "alerts", label: "Alerts", icon: "◌" },
-  { id: "care", label: "Care", icon: "✿" },
+  { id: "settings", label: "Settings", icon: "⚙" },
 ];
 
 interface Props {
@@ -28,7 +29,7 @@ export function BottomNav({ active, alertCount, onChange }: Props) {
             {tab.icon}
           </span>
           <span className="nav-label">{tab.label}</span>
-          {tab.id === "alerts" && alertCount > 0 && (
+          {tab.id === "anomalies" && alertCount > 0 && (
             <span className="nav-badge">{alertCount}</span>
           )}
         </button>

@@ -93,7 +93,7 @@ def _seed() -> None:
             type=AnomalyType.fall,
             severity=AnomalySeverity.critical,
             title="Possible fall detected",
-            message="Sudden impact and no movement for 45 seconds in the bedroom.",
+            message="Sudden impact and no movement for 45 minuates in the bedroom.",
             occurred_at=now - timedelta(minutes=12),
             acknowledged=False,
         ),

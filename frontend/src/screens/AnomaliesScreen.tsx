@@ -9,23 +9,23 @@ interface Props {
   onAcknowledge: (id: string) => Promise<void>;
 }
 
-export function AlertsScreen({ anomalies, user, privacyMode, onAcknowledge }: Props) {
+export function AnomaliesScreen({ anomalies, user, privacyMode, onAcknowledge }: Props) {
   const canCallEmergency = user.role === "caregiver";
   const activeCritical = anomalies.filter(
     (a) => !a.acknowledged && a.severity === "critical",
   );
 
   return (
-    <div className="screen alerts-screen">
+    <div className="screen anomalies-screen">
       <header className="screen-header">
-        <p className="greeting-eyebrow">Gentle watch</p>
-        <h1>Alerts</h1>
+        <p className="greeting-eyebrow">Detection</p>
+        <h1>Anomaly Detection</h1>
         <p className="hero-copy">
           {canCallEmergency
             ? privacyMode
               ? "Warning and info alerts stay private. Only critical danger is shared with your care circle."
               : "Critical details and local emergency reach are available while this alert is active."
-            : "Anomalies that may need a soft, timely response."}
+            : "Events from sensors that may need your attention."}
         </p>
       </header>
 

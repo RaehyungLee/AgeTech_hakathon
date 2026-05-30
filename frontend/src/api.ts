@@ -1,11 +1,12 @@
 import type {
   Anomaly,
-  CareInsight,
   DashboardSummary,
+  EmergencyContact,
   EmergencyInfo,
   MeResponse,
   Sensor,
   User,
+  UserRole,
 } from "./types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
@@ -47,11 +48,22 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ email, password }),
     }),
+  signup: (payload: {
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    relation: string;
+  }) =>
+    request<{ token: string; user: User }>("/api/auth/signup", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   getMe: () => request<MeResponse>("/api/auth/me"),
   getSummary: () => request<DashboardSummary>("/api/summary"),
   getSensors: () => request<Sensor[]>("/api/sensors"),
   getAnomalies: () => request<Anomaly[]>("/api/anomalies"),
-  getCare: () => request<CareInsight>("/api/care"),
+  getEmergencyContacts: () => request<EmergencyContact[]>("/api/emergency/contacts"),
   getEmergencyInfo: (anomalyId: string) =>
     request<EmergencyInfo>(`/api/emergency/${anomalyId}`),
   logEmergencyCall: (anomalyId: string) =>

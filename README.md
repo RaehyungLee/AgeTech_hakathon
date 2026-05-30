@@ -119,11 +119,10 @@ git push -u origin main
 
 | Email | Role | Password |
 |-------|------|----------|
-| `alex@kinu.demo` | Daughter (caregiver) | `demo123` |
-| `sam@kinu.demo` | Neighbor (caregiver) | `demo123` |
-| `maya@kinu.demo` | Resident | `demo123` |
+| `daughter@kinu.demo` | Daughter (caregiver) | `demo123` |
+| `father@kinu.demo` | Father (resident) | `demo123` |
 
-Sign in as **Alex** or **Sam**, open **Alerts**, and tap **Call local emergency** on a critical alert to dial **911** for Maya's San Francisco home location.
+Sign in as **Daughter**, open **Anomalies**, and tap **Call local emergency** on a critical alert to dial **911** for Father's San Francisco home location.
 
 ## Privacy model (demo)
 

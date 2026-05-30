@@ -2,14 +2,16 @@ import { useCallback, useEffect, useState } from "react";
 import { api, setAuthToken } from "./api";
 import { BottomNav } from "./components/BottomNav";
 import { MobileShell } from "./components/MobileShell";
-import { AlertsScreen } from "./screens/AlertsScreen";
-import { CareScreen } from "./screens/CareScreen";
+import { AnomaliesScreen } from "./screens/AnomaliesScreen";
+import { EmergencyScreen } from "./screens/EmergencyScreen";
 import { HomeScreen } from "./screens/HomeScreen";
 import { LoginScreen } from "./screens/LoginScreen";
 import { SensorsScreen } from "./screens/SensorsScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
+import { SignupScreen } from "./screens/SignupScreen";
 import type {
   Anomaly,
-  CareInsight,
+  AuthView,
   DashboardSummary,
   Sensor,
   TabId,
@@ -19,6 +21,7 @@ import type {
 import "./App.css";
 
 function App() {
+  const [authView, setAuthView] = useState<AuthView>("login");
   const [user, setUser] = useState<User | null>(null);
   const [watchedResidents, setWatchedResidents] = useState<WatchedResident[]>([]);
   const [authLoading, setAuthLoading] = useState(true);
@@ -26,33 +29,29 @@ function App() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [sensors, setSensors] = useState<Sensor[]>([]);
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
-  const [care, setCare] = useState<CareInsight | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const loadDashboard = useCallback(async () => {
-    if (!user) return;
     try {
-      const [me, summaryData, sensorData, anomalyData, careData] = await Promise.all([
+      const [me, summaryData, sensorData, anomalyData] = await Promise.all([
         api.getMe(),
         api.getSummary(),
         api.getSensors(),
         api.getAnomalies(),
-        api.getCare(),
       ]);
       setUser(me.user);
       setWatchedResidents(me.watched_residents);
       setSummary(summaryData);
       setSensors(sensorData);
       setAnomalies(anomalyData);
-      setCare(careData);
       setError(null);
     } catch {
       setError("Kinu cannot reach the sensor service right now.");
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     async function restoreSession() {
@@ -60,6 +59,7 @@ function App() {
         const me = await api.getMe();
         setUser(me.user);
         setWatchedResidents(me.watched_residents);
+        setAuthView("app");
       } catch {
         setAuthToken(null);
       } finally {
@@ -70,17 +70,19 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || authView !== "app") return;
     void loadDashboard();
-    const interval = window.setInterval(() => void loadDashboard(), 30000);
+    const interval = window.setInterval(() => void loadDashboard(), 3000);
     return () => window.clearInterval(interval);
-  }, [loadDashboard, user]);
+  }, [user?.id, authView, loadDashboard]);
 
-  async function handleLogin(_nextUser: User) {
+  async function handleAuthSuccess(_nextUser: User) {
     const me = await api.getMe();
     setUser(me.user);
     setWatchedResidents(me.watched_residents);
+    setAuthView("app");
     setLoading(true);
+    setTab("home");
   }
 
   function handleSignOut() {
@@ -90,10 +92,10 @@ function App() {
     setSummary(null);
     setSensors([]);
     setAnomalies([]);
-    setCare(null);
     setLoading(true);
     setError(null);
     setTab("home");
+    setAuthView("login");
   }
 
   async function handleRename(id: string, name: string) {
@@ -117,24 +119,44 @@ function App() {
     );
   }
 
-  if (!user) {
+  if (authView === "login") {
     return (
       <MobileShell live={false}>
         <div className="screen-stack login-stack">
-          <LoginScreen onLogin={(nextUser) => void handleLogin(nextUser)} />
+          <LoginScreen
+            onLogin={(nextUser) => void handleAuthSuccess(nextUser)}
+            onGoSignup={() => setAuthView("signup")}
+          />
         </div>
       </MobileShell>
     );
   }
 
-  const activeAlerts =
+  if (authView === "signup") {
+    return (
+      <MobileShell live={false}>
+        <div className="screen-stack login-stack">
+          <SignupScreen
+            onSignup={(nextUser) => void handleAuthSuccess(nextUser)}
+            onGoLogin={() => setAuthView("login")}
+          />
+        </div>
+      </MobileShell>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  const privacyMode = summary?.privacy_mode ?? false;
+  const alertCount =
     user.role === "caregiver"
       ? anomalies.filter((a) => !a.acknowledged && a.severity === "critical").length
       : anomalies.filter((a) => !a.acknowledged).length;
-  const privacyMode = summary?.privacy_mode ?? false;
 
   return (
-    <MobileShell live={!error} user={user} onSignOut={handleSignOut}>
+    <MobileShell live={!error} user={user}>
       <div className="app-body">
         {loading && <div className="loading-banner">Waking Kinu gently…</div>}
         {error && <div className="error-banner">{error}</div>}
@@ -142,35 +164,42 @@ function App() {
         <div className="screen-stack">
           {tab === "home" && summary && (
             <HomeScreen
-              summary={summary}
               anomalies={anomalies}
               user={user}
-              watchedResidents={watchedResidents}
-              onGoAlerts={() => setTab("alerts")}
-              onGoCare={() => setTab("care")}
-            />
-          )}
-          {tab === "sensors" && (
-            <SensorsScreen
-              sensors={sensors}
-              user={user}
               privacyMode={privacyMode}
-              onRename={handleRename}
+              watchedResidents={watchedResidents}
+              onGoAnomalies={() => setTab("anomalies")}
             />
           )}
-          {tab === "alerts" && (
-            <AlertsScreen
+          {tab === "anomalies" && (
+            <AnomaliesScreen
               anomalies={anomalies}
               user={user}
               privacyMode={privacyMode}
               onAcknowledge={handleAcknowledge}
             />
           )}
-          {tab === "care" && care && <CareScreen care={care} user={user} />}
+          {tab === "emergency" && <EmergencyScreen />}
+          {tab === "sensors" && (
+            <SensorsScreen
+              sensors={sensors}
+              summary={summary}
+              user={user}
+              onRename={handleRename}
+            />
+          )}
+          {tab === "settings" && (
+            <SettingsScreen
+              user={user}
+              watchedResidents={watchedResidents}
+              privacyMode={privacyMode}
+              onSignOut={handleSignOut}
+            />
+          )}
         </div>
       </div>
 
-      <BottomNav active={tab} alertCount={activeAlerts} onChange={setTab} />
+      <BottomNav active={tab} alertCount={alertCount} onChange={setTab} />
     </MobileShell>
   );
 }

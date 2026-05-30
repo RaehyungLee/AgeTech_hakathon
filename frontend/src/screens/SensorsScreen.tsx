@@ -1,45 +1,54 @@
 import { SensorCard } from "../components/SensorCard";
-import { PrivacyNotice } from "../components/PrivacyNotice";
-import type { Sensor, User } from "../types";
+import type { DashboardSummary, Sensor, User } from "../types";
 
 interface Props {
   sensors: Sensor[];
+  summary: DashboardSummary | null;
   user: User;
-  privacyMode: boolean;
   onRename: (id: string, name: string) => Promise<void>;
 }
 
-export function SensorsScreen({ sensors, user, privacyMode, onRename }: Props) {
-  const isPrivate = user.role === "caregiver" || privacyMode;
-
+export function SensorsScreen({ sensors, summary, user, onRename }: Props) {
   return (
     <div className="screen sensors-screen">
       <header className="screen-header">
-        <p className="greeting-eyebrow">Your network</p>
-        <h1>Sensors</h1>
+        <p className="greeting-eyebrow">Health check</p>
+        <h1>Sensor Check</h1>
         <p className="hero-copy">
           {user.role === "caregiver"
-            ? "Sensor locations and activity stay private unless a critical alert opens sharing."
-            : "Name each sensor the way your family remembers home."}
+            ? "See sensor status and battery. Activity logs stay private unless critical."
+            : "Review battery, status, and naming for each sensor."}
         </p>
       </header>
 
-      {isPrivate ? (
-        <PrivacyNotice
-          title="Sensor details are private"
-          message={
-            user.role === "caregiver"
-              ? "Only the resident can view sensor names, rooms, and battery levels day to day."
-              : "Your sensor network is visible only on your account."
-          }
-        />
-      ) : (
-        <div className="sensor-list">
-          {sensors.map((sensor) => (
-            <SensorCard key={sensor.id} sensor={sensor} onRename={onRename} compact />
-          ))}
-        </div>
+      {summary && (
+        <section className="sensor-summary-strip">
+          <div>
+            <strong>{summary.online_sensors}</strong>
+            <span>Online</span>
+          </div>
+          <div>
+            <strong>{summary.low_battery_sensors}</strong>
+            <span>Low battery</span>
+          </div>
+          <div>
+            <strong>{summary.total_sensors}</strong>
+            <span>Total</span>
+          </div>
+        </section>
       )}
+
+      <div className="sensor-list">
+        {sensors.map((sensor) => (
+          <SensorCard
+            key={sensor.id}
+            sensor={sensor}
+            onRename={onRename}
+            compact
+            canRename={user.role === "resident"}
+          />
+        ))}
+      </div>
     </div>
   );
 }

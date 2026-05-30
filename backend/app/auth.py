@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from fastapi import Depends, Header, HTTPException
 
-from app.models import User, UserRole, WatchedResident
+from app.models import EmergencyContact, User, UserRole, WatchedResident
 
 
 @dataclass
@@ -34,31 +34,81 @@ RESIDENT_PROFILES: dict[str, ResidentProfile] = {
 USERS: dict[str, User] = {
     "u1": User(
         id="u1",
-        email="maya@kinu.demo",
-        name="Maya Chen",
+        email="father@kinu.demo",
+        name="Father",
         role=UserRole.resident,
-        relation="Resident",
+        relation="Father",
     ),
     "u2": User(
         id="u2",
-        email="alex@kinu.demo",
-        name="Alex Chen",
+        email="daughter@kinu.demo",
+        name="Daughter",
         role=UserRole.caregiver,
         relation="Daughter",
-        watches=["u1"],
-    ),
-    "u3": User(
-        id="u3",
-        email="sam@kinu.demo",
-        name="Sam Rivera",
-        role=UserRole.caregiver,
-        relation="Neighbor",
         watches=["u1"],
     ),
 }
 
 EMAIL_INDEX = {user.email.lower(): user.id for user in USERS.values()}
 SESSIONS: dict[str, str] = {}
+PASSWORDS: dict[str, str] = {user_id: DEMO_PASSWORD for user_id in USERS}
+
+SEEDED_CONTACTS: list[EmergencyContact] = [
+    EmergencyContact(
+        id="c1",
+        name="Daughter",
+        relation="Family",
+        phone="+1 (415) 555-0142",
+        tel_uri="tel:+14155550142",
+        when_to_call="First family contact when something feels wrong.",
+        is_emergency=False,
+    ),
+    EmergencyContact(
+        id="c2",
+        name="Maria Lopez",
+        relation="Aunt",
+        phone="+1 (628) 555-2841",
+        tel_uri="tel:+16285552841",
+        when_to_call="Nearby family who can check in quickly.",
+        is_emergency=False,
+    ),
+    EmergencyContact(
+        id="c3",
+        name="James Holt",
+        relation="Family friend",
+        phone="+1 (510) 555-7392",
+        tel_uri="tel:+15105557392",
+        when_to_call="Trusted neighbor with a spare key.",
+        is_emergency=False,
+    ),
+    EmergencyContact(
+        id="c4",
+        name="Dr. Evelyn Park",
+        relation="Primary care",
+        phone="+1 (415) 555-0100",
+        tel_uri="tel:+14155550100",
+        when_to_call="Medical guidance for ongoing health concerns.",
+        is_emergency=False,
+    ),
+    EmergencyContact(
+        id="c5",
+        name="Westside Pharmacy",
+        relation="Medication line",
+        phone="+1 (415) 555-8820",
+        tel_uri="tel:+14155558820",
+        when_to_call="Prescription questions or refill help.",
+        is_emergency=False,
+    ),
+    EmergencyContact(
+        id="c6",
+        name="Kinu Care Desk",
+        relation="Support",
+        phone="+1 (800) 555-5468",
+        tel_uri="tel:+18005555468",
+        when_to_call="Help with the app or sensors — not for urgent danger.",
+        is_emergency=False,
+    ),
+]
 
 EMERGENCY_NUMBERS: dict[str, tuple[str, str]] = {
     "US": ("911", "US Emergency Services"),
@@ -104,12 +154,66 @@ EMERGENCY_CALLS: list[dict[str, str]] = []
 
 def login(email: str, password: str) -> tuple[str, User]:
     user_id = EMAIL_INDEX.get(email.strip().lower())
-    if not user_id or password != DEMO_PASSWORD:
+    if not user_id or PASSWORDS.get(user_id) != password:
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     token = uuid4().hex
     SESSIONS[token] = user_id
     return token, USERS[user_id]
+
+
+def register_user(
+    name: str,
+    email: str,
+    password: str,
+    role: UserRole,
+    relation: str,
+) -> tuple[str, User]:
+    normalized = email.strip().lower()
+    if normalized in EMAIL_INDEX:
+        raise HTTPException(status_code=409, detail="An account with this email already exists")
+
+    user_id = f"u{len(USERS) + 1}"
+    watches: list[str] = []
+    if role == UserRole.caregiver:
+        watches = ["u1"]
+
+    user = User(
+        id=user_id,
+        email=normalized,
+        name=name.strip(),
+        role=role,
+        relation=relation.strip() or ("Resident" if role == UserRole.resident else "Caregiver"),
+        watches=watches,
+    )
+    USERS[user_id] = user
+    EMAIL_INDEX[normalized] = user_id
+    PASSWORDS[user_id] = password
+
+    token = uuid4().hex
+    SESSIONS[token] = user_id
+    return token, user
+
+
+def get_emergency_contacts(include_local_emergency: bool) -> list[EmergencyContact]:
+    contacts = list(SEEDED_CONTACTS)
+    if include_local_emergency:
+        profile = RESIDENT_PROFILES.get("u1")
+        if profile:
+            number, label = emergency_for_country(profile.country_code)
+            contacts.insert(
+                0,
+                EmergencyContact(
+                    id="local-911",
+                    name=label,
+                    relation="Local emergency",
+                    phone=number,
+                    tel_uri=f"tel:{number}",
+                    when_to_call="Life-threatening danger — available during active critical alerts.",
+                    is_emergency=True,
+                ),
+            )
+    return contacts
 
 
 def logout(token: str) -> None:

@@ -28,6 +28,24 @@ class LoginResponse(BaseModel):
     user: User
 
 
+class SignupRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=64)
+    email: str
+    password: str = Field(min_length=6, max_length=64)
+    role: UserRole = UserRole.caregiver
+    relation: str = Field(default="Caregiver", max_length=32)
+
+
+class EmergencyContact(BaseModel):
+    id: str
+    name: str
+    relation: str
+    phone: str
+    tel_uri: str
+    when_to_call: str
+    is_emergency: bool = False
+
+
 class WatchedResident(BaseModel):
     id: str
     name: str

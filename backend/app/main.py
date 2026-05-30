@@ -5,10 +5,12 @@ from app.auth import (
     USERS,
     can_view_resident,
     emergency_for_country,
+    get_emergency_contacts,
     get_resident_profile,
     get_watched_residents,
     log_emergency_call,
     login,
+    register_user,
     require_user,
 )
 from app.care import get_care_insight
@@ -17,12 +19,14 @@ from app.models import (
     Anomaly,
     CareInsight,
     DashboardSummary,
+    EmergencyContact,
     EmergencyInfo,
     LoginRequest,
     LoginResponse,
     MeResponse,
     Sensor,
     SensorUpdate,
+    SignupRequest,
     User,
     UserRole,
 )
@@ -30,6 +34,7 @@ from app.privacy import (
     caregiver_privacy_mode,
     filter_anomalies_for_user,
     filter_sensors_for_user,
+    has_critical_access,
     summary_for_user,
     care_for_user,
     watched_residents_for_user,
@@ -66,6 +71,18 @@ def auth_login(payload: LoginRequest) -> LoginResponse:
     return LoginResponse(token=token, user=user)
 
 
+@app.post("/api/auth/signup", response_model=LoginResponse)
+def auth_signup(payload: SignupRequest) -> LoginResponse:
+    token, user = register_user(
+        payload.name,
+        payload.email,
+        payload.password,
+        payload.role,
+        payload.relation,
+    )
+    return LoginResponse(token=token, user=user)
+
+
 @app.get("/api/auth/me", response_model=MeResponse)
 def auth_me(user: User = Depends(require_user)) -> MeResponse:
     watched = (
@@ -78,6 +95,12 @@ def auth_me(user: User = Depends(require_user)) -> MeResponse:
         watched_residents=watched,
         privacy_mode=caregiver_privacy_mode(user),
     )
+
+
+@app.get("/api/emergency/contacts", response_model=list[EmergencyContact])
+def emergency_contacts(user: User = Depends(require_user)) -> list[EmergencyContact]:
+    include_local = user.role == UserRole.resident or has_critical_access(user)
+    return get_emergency_contacts(include_local)
 
 
 @app.get("/api/emergency/{anomaly_id}", response_model=EmergencyInfo)

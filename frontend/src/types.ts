@@ -98,18 +98,16 @@ export interface DashboardSummary {
   monitoring_active: boolean;
 }
 
-export interface CareInsight {
-  calm_score: number;
-  calm_label: string;
-  rest_hours: number;
-  rest_quality: string;
-  ambient_comfort: string;
-  temperature: number;
-  humidity: number;
-  daily_affirmation: string;
-  gentle_tip: string;
-  hydration_reminder: string;
-  moments_of_peace: number;
+export interface EmergencyContact {
+  id: string;
+  name: string;
+  relation: string;
+  phone: string;
+  tel_uri: string;
+  when_to_call: string;
+  is_emergency: boolean;
 }
 
-export type TabId = "home" | "sensors" | "alerts" | "care";
+export type AuthView = "login" | "signup" | "app";
+
+export type TabId = "home" | "anomalies" | "emergency" | "sensors" | "settings";

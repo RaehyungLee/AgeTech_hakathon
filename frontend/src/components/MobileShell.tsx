@@ -5,10 +5,9 @@ interface Props {
   children: ReactNode;
   live: boolean;
   user?: User | null;
-  onSignOut?: () => void;
 }
 
-export function MobileShell({ children, live, user, onSignOut }: Props) {
+export function MobileShell({ children, live, user }: Props) {
   return (
     <div className="mobile-demo">
       <div className="phone-frame">
@@ -18,9 +17,9 @@ export function MobileShell({ children, live, user, onSignOut }: Props) {
             <span>9:41</span>
             <div className="status-bar-right">
               {user && (
-                <button type="button" className="user-chip" onClick={onSignOut}>
+                <span className="user-chip">
                   {user.name.split(" ")[0]} · {user.relation}
-                </button>
+                </span>
               )}
               <span className={`status-live${live ? "" : " offline"}`}>
                 {live ? "Kinu live" : "Offline"}
