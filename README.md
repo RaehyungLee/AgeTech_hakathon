@@ -1,6 +1,6 @@
-# Sensor Alarm Dashboard
+# Kinu — Sensor Alarm Dashboard
 
-Detection sensor alarm dashboard for the Heckathon demo. Docker-ready monorepo with a React frontend and FastAPI backend.
+A cute, calm mobile-first elder care monitoring app for the Heckathon demo. Docker-ready with React frontend and FastAPI backend.
 
 ## Brief plan
 
@@ -34,7 +34,7 @@ docker compose up --build
 
 | Service  | URL |
 |----------|-----|
-| Dashboard | http://localhost:5173 |
+| Dashboard | http://localhost:5173 (mobile app UI — use phone or narrow browser) |
 | API       | http://localhost:8000 |
 | API docs  | http://localhost:8000/docs |
 
@@ -83,12 +83,30 @@ git remote add origin git@github.com:RaehyungLee/AgeTech_hakathon.git
 git push -u origin main
 ```
 
-## API (placeholder)
+## Mobile demo
+
+- Open **http://localhost:5173** on your phone (same Wi‑Fi as your machine)
+- Or use Chrome DevTools → device toolbar for a phone preview
+- On desktop, Kinu appears inside a phone frame for presentation
+- **Add to Home Screen** (PWA) for a full-screen app-like demo
+
+### Tabs
+
+| Tab | Purpose |
+|-----|---------|
+| **Home** | Calm overview, quick alert preview |
+| **Sensors** | All sensors, battery, custom naming |
+| **Alerts** | Anomaly feed with acknowledge |
+| **Care** | Beauty & wellness — calm score, rest, ambient comfort, daily bloom |
+
+## API
 
 | Endpoint | Description |
 |----------|-------------|
 | `GET /health` | Health check |
-| `GET /api/sensors` | List sensors (stub) |
-| `GET /api/alarms` | List alarms (stub) |
-
-These will be wired to real data in a later phase.
+| `GET /api/summary` | Dashboard stats |
+| `GET /api/sensors` | List sensors |
+| `PATCH /api/sensors/{id}` | Rename a sensor |
+| `GET /api/anomalies` | List anomaly alerts |
+| `PATCH /api/anomalies/{id}/acknowledge` | Acknowledge alert |
+| `GET /api/care` | Care & beauty wellness insights |

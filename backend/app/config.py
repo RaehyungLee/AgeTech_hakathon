@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    app_name: str = "Sensor Alarm API"
+    app_name: str = "Kinu API"
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
     @property
