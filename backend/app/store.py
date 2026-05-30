@@ -10,6 +10,8 @@ from app.models import (
     SensorType,
 )
 
+DEFAULT_RESIDENT_ID = "u1"
+
 SENSORS: dict[str, Sensor] = {}
 ANOMALIES: dict[str, Anomaly] = {}
 
@@ -180,6 +182,11 @@ def update_sensor_name(sensor_id: str, name: str) -> Sensor | None:
             ANOMALIES[anomaly_id] = anomaly.model_copy(update={"sensor_name": name.strip()})
 
     return updated
+
+
+def get_anomaly(anomaly_id: str) -> Anomaly | None:
+    _seed()
+    return ANOMALIES.get(anomaly_id)
 
 
 def get_anomalies() -> list[Anomaly]:

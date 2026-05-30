@@ -1,3 +1,49 @@
+export type UserRole = "resident" | "caregiver";
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  relation: string;
+  watches: string[];
+}
+
+export interface WatchedResident {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  region: string;
+  country_code: string;
+  emergency_number: string;
+  emergency_label: string;
+}
+
+export interface MeResponse {
+  user: User;
+  watched_residents: WatchedResident[];
+  privacy_mode: boolean;
+}
+
+export interface EmergencyInfo {
+  anomaly_id: string;
+  resident_id: string;
+  resident_name: string;
+  caller_name: string;
+  address: string;
+  city: string;
+  region: string;
+  country_code: string;
+  latitude: number;
+  longitude: number;
+  emergency_number: string;
+  emergency_label: string;
+  tel_uri: string;
+  alert_title: string;
+  alert_message: string;
+}
+
 export type SensorType =
   | "motion"
   | "fall"
@@ -48,6 +94,8 @@ export interface DashboardSummary {
   low_battery_sensors: number;
   active_anomalies: number;
   critical_anomalies: number;
+  privacy_mode: boolean;
+  monitoring_active: boolean;
 }
 
 export interface CareInsight {

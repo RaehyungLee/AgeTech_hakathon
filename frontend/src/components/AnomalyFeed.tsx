@@ -1,13 +1,22 @@
 import type { Anomaly } from "../types";
 import { formatRelativeTime, formatTimestamp, severityLabels } from "../utils";
+import { EmergencyCallButton } from "./EmergencyCallButton";
 
 interface Props {
   anomalies: Anomaly[];
   onAcknowledge: (id: string) => Promise<void>;
+  canCallEmergency?: boolean;
   mobile?: boolean;
+  emptyMessage?: string;
 }
 
-export function AnomalyFeed({ anomalies, onAcknowledge, mobile = false }: Props) {
+export function AnomalyFeed({
+  anomalies,
+  onAcknowledge,
+  canCallEmergency = false,
+  mobile = false,
+  emptyMessage = "No active anomalies right now",
+}: Props) {
   const active = anomalies.filter((a) => !a.acknowledged);
   const resolved = anomalies.filter((a) => a.acknowledged);
 
@@ -27,7 +36,7 @@ export function AnomalyFeed({ anomalies, onAcknowledge, mobile = false }: Props)
         {active.length === 0 ? (
           <div className="empty-state">
             <span className="empty-icon" aria-hidden="true">✓</span>
-            <p>No active anomalies right now</p>
+            <p>{emptyMessage}</p>
           </div>
         ) : (
           active.map((anomaly) => (
@@ -35,6 +44,7 @@ export function AnomalyFeed({ anomalies, onAcknowledge, mobile = false }: Props)
               key={anomaly.id}
               anomaly={anomaly}
               onAcknowledge={onAcknowledge}
+              canCallEmergency={canCallEmergency}
             />
           ))
         )}
@@ -57,10 +67,12 @@ export function AnomalyFeed({ anomalies, onAcknowledge, mobile = false }: Props)
 function AnomalyCard({
   anomaly,
   onAcknowledge,
+  canCallEmergency = false,
   resolved = false,
 }: {
   anomaly: Anomaly;
   onAcknowledge?: (id: string) => Promise<void>;
+  canCallEmergency?: boolean;
   resolved?: boolean;
 }) {
   return (
@@ -79,11 +91,16 @@ function AnomalyCard({
 
       <footer className="anomaly-footer">
         <span className="sensor-ref">{anomaly.sensor_name}</span>
-        {!resolved && onAcknowledge && (
-          <button type="button" className="ack-btn" onClick={() => void onAcknowledge(anomaly.id)}>
-            Acknowledge
-          </button>
-        )}
+        <div className="anomaly-footer-actions">
+          {!resolved && canCallEmergency && anomaly.severity === "critical" && (
+            <EmergencyCallButton anomalyId={anomaly.id} />
+          )}
+          {!resolved && onAcknowledge && (
+            <button type="button" className="ack-btn" onClick={() => void onAcknowledge(anomaly.id)}>
+              Acknowledge
+            </button>
+          )}
+        </div>
       </footer>
     </article>
   );

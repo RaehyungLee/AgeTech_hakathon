@@ -110,3 +110,21 @@ git push -u origin main
 | `GET /api/anomalies` | List anomaly alerts |
 | `PATCH /api/anomalies/{id}/acknowledge` | Acknowledge alert |
 | `GET /api/care` | Care & beauty wellness insights |
+| `POST /api/auth/login` | Sign in (demo accounts) |
+| `GET /api/auth/me` | Current user & care circle |
+| `GET /api/emergency/{anomaly_id}` | Local emergency info for critical alert |
+| `POST /api/emergency/{anomaly_id}/call` | Log caregiver emergency call |
+
+## Demo accounts
+
+| Email | Role | Password |
+|-------|------|----------|
+| `alex@kinu.demo` | Daughter (caregiver) | `demo123` |
+| `sam@kinu.demo` | Neighbor (caregiver) | `demo123` |
+| `maya@kinu.demo` | Resident | `demo123` |
+
+Sign in as **Alex** or **Sam**, open **Alerts**, and tap **Call local emergency** on a critical alert to dial **911** for Maya's San Francisco home location.
+
+## Privacy model (demo)
+
+Shared caregivers only see **critical, unacknowledged** alerts. Sensors, wellness, address, and warning/info alerts stay private until a critical issue is active. Acknowledging the last critical alert returns the app to private mode.

@@ -4,6 +4,65 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 
+class UserRole(str, Enum):
+    resident = "resident"
+    caregiver = "caregiver"
+
+
+class User(BaseModel):
+    id: str
+    email: str
+    name: str
+    role: UserRole
+    relation: str
+    watches: list[str] = Field(default_factory=list)
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    token: str
+    user: User
+
+
+class WatchedResident(BaseModel):
+    id: str
+    name: str
+    address: str
+    city: str
+    region: str
+    country_code: str
+    emergency_number: str
+    emergency_label: str
+
+
+class MeResponse(BaseModel):
+    user: User
+    watched_residents: list[WatchedResident] = Field(default_factory=list)
+    privacy_mode: bool = False
+
+
+class EmergencyInfo(BaseModel):
+    anomaly_id: str
+    resident_id: str
+    resident_name: str
+    caller_name: str
+    address: str
+    city: str
+    region: str
+    country_code: str
+    latitude: float
+    longitude: float
+    emergency_number: str
+    emergency_label: str
+    tel_uri: str
+    alert_title: str
+    alert_message: str
+
+
 class SensorType(str, Enum):
     motion = "motion"
     fall = "fall"
@@ -68,6 +127,8 @@ class DashboardSummary(BaseModel):
     low_battery_sensors: int
     active_anomalies: int
     critical_anomalies: int
+    privacy_mode: bool = False
+    monitoring_active: bool = False
 
 
 class CareInsight(BaseModel):

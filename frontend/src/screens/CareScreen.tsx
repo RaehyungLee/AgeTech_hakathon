@@ -1,11 +1,29 @@
+import type { CareInsight, User } from "../types";
+import { PrivacyNotice } from "../components/PrivacyNotice";
 import type { CSSProperties } from "react";
-import type { CareInsight } from "../types";
 
 interface Props {
   care: CareInsight;
+  user: User;
 }
 
-export function CareScreen({ care }: Props) {
+export function CareScreen({ care, user }: Props) {
+  if (user.role === "caregiver") {
+    return (
+      <div className="screen care-screen">
+        <header className="screen-header">
+          <p className="greeting-eyebrow">Beauty & calm</p>
+          <h1>Care</h1>
+          <p className="hero-copy">Wellness rhythms stay with the resident for privacy and dignity.</p>
+        </header>
+        <PrivacyNotice
+          title="Wellness is private"
+          message={care.daily_affirmation}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="screen care-screen">
       <header className="screen-header">
