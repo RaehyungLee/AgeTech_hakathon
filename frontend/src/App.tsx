@@ -9,6 +9,7 @@ import { LoginScreen } from "./screens/LoginScreen";
 import { SensorsScreen } from "./screens/SensorsScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import { SignupScreen } from "./screens/SignupScreen";
+import { AnomalyDetectionSettingsScreen } from "./screens/AnomalyDetectionSettingsScreen";
 import type {
   Anomaly,
   AuthView,
@@ -17,6 +18,7 @@ import type {
   TabId,
   User,
   WatchedResident,
+  Detection,
 } from "./types";
 import "./App.css";
 
@@ -29,6 +31,8 @@ function App() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [sensors, setSensors] = useState<Sensor[]>([]);
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
+  const [selectedDetection, setSelectedDetection] = useState<string | null>(null);
+  const [detections, setDetections] = useState<Detection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,6 +80,12 @@ function App() {
     return () => window.clearInterval(interval);
   }, [user?.id, authView, loadDashboard]);
 
+  useEffect(() => {
+    if (tab !== "anomalies") {
+      setSelectedDetection(null);
+    }
+  }, [tab]);
+
   async function handleAuthSuccess(_nextUser: User) {
     const me = await api.getMe();
     setUser(me.user);
@@ -104,11 +114,6 @@ function App() {
     setAnomalies((prev) =>
       prev.map((a) => (a.sensor_id === id ? { ...a, sensor_name: updated.name } : a)),
     );
-  }
-
-  async function handleAcknowledge(id: string) {
-    await api.acknowledgeAnomaly(id);
-    await loadDashboard();
   }
 
   if (authLoading) {
@@ -171,12 +176,24 @@ function App() {
               onGoAnomalies={() => setTab("anomalies")}
             />
           )}
-          {tab === "anomalies" && (
+          {tab === "anomalies" && !selectedDetection && (
             <AnomaliesScreen
               anomalies={anomalies}
-              user={user}
               privacyMode={privacyMode}
-              onAcknowledge={handleAcknowledge}
+              detections={detections}
+              onSelectDetection={(id) => setSelectedDetection(id)}
+              onAddDetection={() => setSelectedDetection("sink")}
+            />
+          )}
+          {selectedDetection && (
+            <AnomalyDetectionSettingsScreen
+              detectionId={selectedDetection as "sink" | "bath" | "bed"}
+              sensors={sensors}
+              onBack={() => setSelectedDetection(null)}
+              onSave={(detection) => {
+                setDetections((prev) => [...prev.filter((p) => p.id !== detection.id), detection]);
+                setSelectedDetection(null);
+              }}
             />
           )}
           {tab === "emergency" && <EmergencyScreen />}

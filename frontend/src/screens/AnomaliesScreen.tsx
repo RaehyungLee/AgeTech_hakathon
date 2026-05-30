@@ -1,19 +1,73 @@
-import { AnomalyFeed } from "../components/AnomalyFeed";
-import { PrivacyNotice } from "../components/PrivacyNotice";
-import type { Anomaly, User } from "../types";
+import type { Anomaly, Detection } from "../types";
 
 interface Props {
   anomalies: Anomaly[];
-  user: User;
   privacyMode: boolean;
-  onAcknowledge: (id: string) => Promise<void>;
+  detections?: Detection[];
+  onSelectDetection: (id: string) => void;
+  onAddDetection?: () => void;
 }
 
-export function AnomaliesScreen({ anomalies, user, privacyMode, onAcknowledge }: Props) {
-  const canCallEmergency = user.role === "caregiver";
-  const activeCritical = anomalies.filter(
-    (a) => !a.acknowledged && a.severity === "critical",
-  );
+const detectionTiles = [
+  {
+    id: "sink" as const,
+    label: "Sink",
+    emoji: "💧",
+    description: "Water use and kitchen flow",
+    matcher: /(sink|kitchen|water)/i,
+  },
+  {
+    id: "bath" as const,
+    label: "Bath",
+    emoji: "🚿",
+    description: "Bathroom motion and inactivity",
+    matcher: /(bath|shower|bathtub)/i,
+  },
+  {
+    id: "bed" as const,
+    label: "Bed",
+    emoji: "🛏️",
+    description: "Bed exits and rest changes",
+    matcher: /(bed|sleep|bed_exit)/i,
+  },
+];
+
+export function AnomaliesScreen({ anomalies, privacyMode, detections = [], onSelectDetection, onAddDetection }: Props) {
+  const activeAlerts = anomalies.filter((anomaly) => !anomaly.acknowledged);
+  const alertCount = activeAlerts.length;
+  const activeAlertsLabel = alertCount === 1 ? "1 alert active" : `${alertCount} alerts active`;
+
+  const combined = [...detectionTiles, ...detections.map((d) => ({
+    id: d.id,
+    label: d.name,
+    emoji: d.emoji,
+    matcher: d.trigger_on_sensor_id
+      ? new RegExp("^" + d.trigger_on_sensor_id + "$")
+      : new RegExp(d.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
+    meta: d,
+  }))];
+
+  const now = Date.now();
+  const detectionTilesWithStatus = combined.map((tile) => {
+    const matching = activeAlerts.filter((anomaly) => {
+      const det = (tile as any).meta as Detection | undefined;
+      if (det && det.trigger_on_sensor_id) {
+        return anomaly.sensor_id === det.trigger_on_sensor_id;
+      }
+      return tile.matcher.test(`${anomaly.title} ${anomaly.sensor_name} ${anomaly.type}`);
+    });
+
+    if (matching.length === 0) return { ...tile, severity: null };
+
+    const earliest = matching.reduce((min, a) => (new Date(a.occurred_at).getTime() < min ? new Date(a.occurred_at).getTime() : min), Infinity);
+    const deltaSec = Math.max(0, Math.floor((now - earliest) / 1000));
+    const det = (tile as any).meta as Detection | undefined;
+    const first = det ? det.first_duration_seconds : 30;
+    const second = det ? det.second_duration_seconds : 60;
+
+    const severity = deltaSec >= second ? "critical" : deltaSec >= first ? "warning" : "warning";
+    return { ...tile, severity };
+  });
 
   return (
     <div className="screen anomalies-screen">
@@ -21,33 +75,47 @@ export function AnomaliesScreen({ anomalies, user, privacyMode, onAcknowledge }:
         <p className="greeting-eyebrow">Detection</p>
         <h1>Anomaly Detection</h1>
         <p className="hero-copy">
-          {canCallEmergency
-            ? privacyMode
-              ? "Warning and info alerts stay private. Only critical danger is shared with your care circle."
-              : "Critical details and local emergency reach are available while this alert is active."
-            : "Events from sensors that may need your attention."}
+          {privacyMode
+            ? "Active monitoring is on. Critical alerts show red, and private info stays quiet unless needed."
+            : "Active anomaly detection is on. Tap a sensor tile to open its settings page."}
         </p>
       </header>
 
-      {canCallEmergency && privacyMode && (
-        <PrivacyNotice
-          compact
-          title="No critical alerts"
-          message="Daily alerts remain private. Kinu will open sharing only for critical issues."
-        />
-      )}
+      <section className={`alert-banner${alertCount > 0 ? " active" : ""}`}>
+        <p className="alert-title">{alertCount > 0 ? "Alert active" : "All clear"}</p>
+        <p className="alert-copy">
+          {alertCount > 0
+            ? `${activeAlertsLabel}. Tap the highlighted tile to inspect it.`
+            : "No active anomalies right now. Monitoring is quiet."}
+        </p>
+      </section>
 
-      <AnomalyFeed
-        anomalies={anomalies}
-        onAcknowledge={onAcknowledge}
-        canCallEmergency={canCallEmergency && activeCritical.length > 0}
-        mobile
-        emptyMessage={
-          canCallEmergency
-            ? "No critical alerts right now. Everything else stays private."
-            : "No active anomalies right now"
-        }
-      />
+      <div className="screen-section">
+        <div className="detection-grid">
+          {detectionTilesWithStatus.map((tile) => (
+            <button
+              key={tile.id}
+              type="button"
+              className={`detection-card${tile.severity ? ` severity-${tile.severity}` : ""}`}
+              onClick={() => onSelectDetection(tile.id)}
+            >
+              <div className="detection-card-icon">{tile.emoji}</div>
+              <h2 className="detection-card-label">{tile.label}</h2>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="screen-section">
+        <button
+          type="button"
+          className="add-detection-btn"
+          onClick={() => (onAddDetection ? onAddDetection() : window.alert("Add detection is coming soon!"))}
+        >
+          <span className="plus-sign">+</span>
+          Add detection
+        </button>
+      </div>
     </div>
   );
 }

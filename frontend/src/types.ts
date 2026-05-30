@@ -98,6 +98,17 @@ export interface DashboardSummary {
   monitoring_active: boolean;
 }
 
+export interface Detection {
+  id: string;
+  key: "sink" | "bath" | "bed" | string;
+  name: string;
+  emoji: string;
+  trigger_on_sensor_id?: string | null;
+  trigger_off_sensor_id?: string | null;
+  first_duration_seconds: number;
+  second_duration_seconds: number;
+}
+
 export interface EmergencyContact {
   id: string;
   name: string;
