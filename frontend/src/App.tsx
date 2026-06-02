@@ -63,8 +63,8 @@ const DEFAULT_SENSORS: Sensor[] = [
     name: "Bed pressure",
     type: "bed",
     location: "Bedroom",
-    battery: 18,
-    status: "low_battery",
+    battery: 60,
+    status: "online",
     last_seen: new Date().toISOString(),
   },
 ];
